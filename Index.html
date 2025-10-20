@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WhatsApp-Style Full Form — Fixed</title>
+<title>WhatsApp-Style Full Form — Admin Media Persist</title>
 <style>
 :root{--bg:#e5ddd5;--user:#DCF8C6;--bot:#fff;--muted:#6b6b6b;--accent:#25D366;}
 *{box-sizing:border-box}
@@ -27,7 +27,6 @@ button.send{background:var(--accent);color:white;border:none;padding:10px 12px;b
 @media (max-width:360px){.choice{flex-basis:100%}}
 .choice:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(0,0,0,0.06)}
 .choice.active, .choice.selected{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(18,140,126,0.16)}
-.choice.toggle{display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .mc-grid{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .mc-row{display:flex;gap:8px;overflow:hidden}
 .mc-row .choice{flex:1 1 0}
@@ -97,29 +96,34 @@ function renderMedia(url,label='Media'){
   setTimeout(()=>{ wrap.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
 }
 
-/* === NEW: cleanup helper (removes interactive elements only) === */
+/* === cleanup helper (removes interactive elements only) === */
 function clearInteractiveElements(){
   // remove any element we created with class interactive-wrapper
   const wrappers = Array.from(document.querySelectorAll('.interactive-wrapper'));
   wrappers.forEach(w=>w.remove());
-  // if any temporary file inputs remain, remove them too
-  Array.from(document.querySelectorAll('input[type="file"]')).forEach(f=>{
-    // only remove file inputs that are not part of the persistent DOM (we create them)
-    if(f.closest('.wrap')) f.remove();
-  });
-  // clear textarea placeholders / reset input
+  // remove transient file inputs created inside wrappers (if any left)
+  Array.from(document.querySelectorAll('.interactive-wrapper input[type="file"]')).forEach(f=>f.remove());
+  // reset input box and hide inputbar; persistent media (media-wrap) are NOT removed
   input.value = '';
-  // hide the inputbar by default; nextQuestion will decide if it shows again
   inputbar.style.display = 'none';
 }
 
-/* === renderInput (kept logic, but wrappers added and calls to clearInteractiveElements) === */
+/* === renderInput === */
 function renderInput(q){
-  // reset
   input.value=''; currentAnswer=null;
   inputbar.style.display='flex';
   input.type='text';
   input.placeholder=q.question || '';
+
+  // CLOSING: show and auto-advance so items after closing (including media) show
+  if(q.type === 'closing'){
+    appendBubble(q.question || '—','bot');
+    if(q.closing) appendBubble(q.closing,'bot');
+    // no interactive elements to clear for closing; advance to next item
+    idx++;
+    setTimeout(()=>nextQuestion(), 260);
+    return;
+  }
 
   // TEXTAREA
   if(q.type==='textarea'){
@@ -131,7 +135,6 @@ function renderInput(q){
       const val = ta.value.trim(); if(!val) return alert('Sila isi jawapan');
       appendBubble(val,'user');
       responses[q.id] = val;
-      // cleanup interactive elements before moving on
       clearInteractiveElements();
       idx++;
       nextQuestion();
@@ -151,7 +154,6 @@ function renderInput(q){
       b.onclick = ()=>{
         appendBubble(opt,'user');
         responses[q.id] = opt;
-        // cleanup all interactive elements then advance
         clearInteractiveElements();
         idx++;
         nextQuestion();
@@ -191,7 +193,7 @@ function renderInput(q){
     return;
   }
 
-  // LINEAR SCALE
+  // LINEAR SCALE (rating)
   if(q.type==='linear_scale' || q.type==='rating'){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
@@ -218,7 +220,6 @@ function renderInput(q){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper mc-grid';
     if(q.type==='checkbox_grid'){
-      // parse expected CSV format with sections e.g. "Pagi: Nasi lemak;Roti;...,Tengahari:..."
       const joined = (Array.isArray(q.options) ? q.options.join(';') : (q.options||'')).toString();
       const parts = joined.split(/\s*;\s*/).filter(Boolean);
       const groups = {};
@@ -228,7 +229,6 @@ function renderInput(q){
           const items = (rest||'').split(',').map(s=>s.trim()).filter(Boolean);
           groups[k.trim()] = (groups[k.trim()]||[]).concat(items);
         } else {
-          // fallback
           groups['Pilihan'] = groups['Pilihan'] || []; groups['Pilihan'].push(p.trim());
         }
       });
@@ -240,7 +240,6 @@ function renderInput(q){
           btn.onclick = ()=>{
             appendBubble(`${k}: ${opt}`,'user');
             responses[q.id] = responses[q.id] || []; responses[q.id].push(`${k}: ${opt}`);
-            // remove entire wrapper (not only row) and continue
             clearInteractiveElements();
             idx++;
             nextQuestion();
@@ -250,7 +249,6 @@ function renderInput(q){
         wrapper.appendChild(label); wrapper.appendChild(rowWrap);
       });
     } else {
-      // multiple_choice_grid (simpler: treat each option as a row)
       (q.options||[]).forEach(opt=>{
         const row = document.createElement('div'); row.className='mc-row';
         const btn = document.createElement('button'); btn.className='choice'; btn.textContent = opt;
@@ -269,8 +267,17 @@ function renderInput(q){
     return;
   }
 
-  // FILE
+  // FILE: if admin-provided URL exists -> show admin media persistently; else show upload UI
   if(q.type==='file'){
+    if(q.url){
+      // admin file: render persistently (not inside interactive wrapper)
+      renderMedia(q.url, q.question);
+      // advance
+      idx++;
+      setTimeout(()=>nextQuestion(), 420);
+      return;
+    }
+    // else user upload case
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
     const help = document.createElement('div'); help.className='helper'; help.textContent='Klik "Pilih Fail" untuk buka picker (Gallery/Files).';
@@ -290,11 +297,19 @@ function renderInput(q){
     return;
   }
 
-  // MEDIA (preview only)
+  // MEDIA: admin media persistent (render and advance)
   if(q.type==='media'){
-    inputbar.style.display='none';
-    if(q.url){ renderMedia(q.url, q.question); setTimeout(()=>{ idx++; nextQuestion(); }, 1000); }
-    return;
+    if(q.url){
+      renderMedia(q.url, q.question);
+      idx++;
+      setTimeout(()=>nextQuestion(), 420);
+      return;
+    } else {
+      // no url -> nothing to show, just advance
+      idx++;
+      setTimeout(()=>nextQuestion(), 60);
+      return;
+    }
   }
 
   // DATE / TIME
@@ -310,35 +325,31 @@ function renderInput(q){
   input.placeholder = q.question;
 }
 
-/* === nextQuestion & send logic (sendBtn updated to cleanup interactive elements) === */
+/* === progression & send handler === */
 function nextQuestion(){
   if(idx >= questions.length){
     appendBubble('Terima kasih! Semua soalan dijawab.','bot');
     console.log('responses', responses);
-    // ensure no leftover interactive elements
     clearInteractiveElements();
     return;
   }
   const q = questions[idx];
   appendBubble(q.question,'bot');
-  // small delay to mimic typing
-  setTimeout(()=>renderInput(q), 240);
+  setTimeout(()=>renderInput(q), 260);
 }
 
 sendBtn.onclick = ()=>{
-  // handle date/time/text send via the global input
   if(!currentAnswer) currentAnswer = input.value.trim();
   if(!currentAnswer) return alert('Sila isi jawapan!');
   appendBubble(currentAnswer,'user');
   responses[questions[idx].id] = currentAnswer;
-  // cleanup interactive elements (this hides inputbar too)
   clearInteractiveElements();
   currentAnswer = null; input.value = '';
   idx++;
   nextQuestion();
 };
 
-/* === robust CSV fetch & parse (keperluan asal dikekalkan) === */
+/* === robust CSV fetch & parse === */
 fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
   const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   if(!lines.length) throw new Error('CSV kosong atau tak dapat diakses');
@@ -376,11 +387,13 @@ fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
     if(obj.type==='linear_scale' || obj.type==='rating'){
       obj.max = parseInt((r[iOpt]||'').toString()) || 5;
     }
-    if((obj.type==='file' || obj.type==='media') && r[iFile]) obj.url = (r[iFile]||'').toString().trim();
+    // Mark admin media/file if file_url present
+    if((obj.type==='file' || obj.type==='media') && r[iFile]){
+      obj.url = (r[iFile]||'').toString().trim();
+    }
     return obj;
   });
 
-  // start conversation
   nextQuestion();
 }).catch(e=>{
   appendBubble('❌ Gagal muatkan soalan: '+(e.message||e),'bot');
