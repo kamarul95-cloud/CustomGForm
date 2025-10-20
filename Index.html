@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WhatsApp-Style Full Form — Media Caption Fix</title>
+<title>WhatsApp-Style Full Form — Media Caption Fix + Typing</title>
 <style>
 :root{--bg:#e5ddd5;--user:#DCF8C6;--bot:#fff;--muted:#6b6b6b;--accent:#25D366;}
 *{box-sizing:border-box}
@@ -40,6 +40,18 @@ input[type=date], input[type=time]{padding:10px;border-radius:14px;border:1px so
 
 /* interactive wrapper marker (for JS cleanup) */
 .interactive-wrapper{margin-top:6px}
+
+/* === TYPING styles (new, minimal) === */
+.typing-bubble{align-self:flex-start;background:transparent;border-radius:12px;padding:6px 10px;display:flex;align-items:center}
+.typing{display:inline-flex;gap:6px;align-items:center;justify-content:center;padding:6px 10px;border-radius:18px;background:#f0f0f0}
+.typing span{width:7px;height:7px;border-radius:50%;background:#9aa0a6;opacity:0.9;transform:translateY(0);animation:typing-bounce 1s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:0.12s}
+.typing span:nth-child(3){animation-delay:0.24s}
+@keyframes typing-bounce{
+  0%{transform:translateY(0);opacity:.3}
+  50%{transform:translateY(-6px);opacity:1}
+  100%{transform:translateY(0);opacity:.3}
+}
 </style>
 </head>
 <body>
@@ -98,6 +110,25 @@ function renderMedia(url,label=''){
   setTimeout(()=>{ wrap.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
 }
 
+/* === TYPING UI (minimal safe add) === */
+function showTyping(duration = 600){
+  return new Promise(resolve => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'typing-bubble';
+    const t = document.createElement('div');
+    t.className = 'typing';
+    t.innerHTML = '<span></span><span></span><span></span>';
+    wrapper.appendChild(t);
+    chat.appendChild(wrapper);
+    // scroll into view
+    setTimeout(()=>{ wrapper.scrollIntoView({behavior:'smooth', block:'center'}); }, 10);
+    setTimeout(()=>{
+      wrapper.remove();
+      resolve();
+    }, duration);
+  });
+}
+
 /* === cleanup helper (unchanged) === */
 function clearInteractiveElements(){
   const wrappers = Array.from(document.querySelectorAll('.interactive-wrapper'));
@@ -115,13 +146,13 @@ function renderInput(q){
   input.placeholder=q.question || '';
 
   if(q.type === 'closing'){
-  if(q.question && q.question.trim()!=='') appendBubble(q.question,'bot');
-  if(q.closing && q.closing.trim()!=='') appendBubble(q.closing,'bot');
-  idx = questions.length; // pastikan idx set untuk tamat
-  clearInteractiveElements();
-  console.log('responses', responses);
-  return; // hentikan loop
-}
+    if(q.question && q.question.trim()!=='') appendBubble(q.question,'bot');
+    if(q.closing && q.closing.trim()!=='') appendBubble(q.closing,'bot');
+    idx = questions.length;
+    clearInteractiveElements();
+    console.log('responses', responses);
+    return;
+  }
 
   if(q.type==='textarea'){
     inputbar.style.display='none';
@@ -314,16 +345,18 @@ function renderInput(q){
 }
 
 /* === progression & send handler === */
-function nextQuestion(){
+/* nextQuestion made async to allow awaiting showTyping (minimal change) */
+async function nextQuestion(){
   if(idx >= questions.length){
-    // sudah tamat
     console.log('responses', responses);
     clearInteractiveElements();
     return;
   }
   const q = questions[idx];
-  // hanya append soalan normal, bukan closing
+  // only append bot bubble if there's a non-empty question string and not closing,
+  // but show typing animation first
   if(q.type !== 'closing' && q.question && q.question.trim() !== ''){
+    await showTyping(600); // show typing for 600ms (tweakable)
     appendBubble(q.question,'bot');
   }
   setTimeout(()=>renderInput(q), 260);
