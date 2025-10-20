@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WhatsApp-Style Full Form — Admin Media Persist</title>
+<title>WhatsApp-Style Full Form — Media Caption Fix</title>
 <style>
 :root{--bg:#e5ddd5;--user:#DCF8C6;--bot:#fff;--muted:#6b6b6b;--accent:#25D366;}
 *{box-sizing:border-box}
@@ -83,49 +83,45 @@ function detectMediaType(url){
   if(ext==='pdf') return 'pdf';
   return 'unknown';
 }
-function renderMedia(url,label='Media'){
+
+/* === renderMedia: only show caption if non-empty === */
+function renderMedia(url,label=''){
   const wrap=document.createElement('div'); wrap.className='media-wrap';
-  if(label){ const lab=document.createElement('div'); lab.className='label'; lab.textContent=label; wrap.appendChild(lab); }
+  if(label && label.trim() !== ''){ const lab=document.createElement('div'); lab.className='label'; lab.textContent=label; wrap.appendChild(lab); }
   const type=detectMediaType(url);
-  if(type==='image'){ const img=document.createElement('img'); img.src=url; img.alt=label; wrap.appendChild(img); }
+  if(type==='image'){ const img=document.createElement('img'); img.src=url; img.alt=label||''; wrap.appendChild(img); }
   else if(type==='video'){ const vid=document.createElement('video'); vid.src=url; vid.controls=true; wrap.appendChild(vid); }
   else if(type==='audio'){ const au=document.createElement('audio'); au.src=url; au.controls=true; wrap.appendChild(au); }
   else if(type==='pdf'){ const iframe=document.createElement('iframe'); iframe.src=url; iframe.style.height='320px'; wrap.appendChild(iframe); }
-  else{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.textContent='Buka / Muat Turun '+label; wrap.appendChild(a); }
+  else{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.textContent='Buka / Muat Turun ' + (label || 'Fail'); wrap.appendChild(a); }
   chat.appendChild(wrap);
   setTimeout(()=>{ wrap.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
 }
 
-/* === cleanup helper (removes interactive elements only) === */
+/* === cleanup helper (unchanged) === */
 function clearInteractiveElements(){
-  // remove any element we created with class interactive-wrapper
   const wrappers = Array.from(document.querySelectorAll('.interactive-wrapper'));
   wrappers.forEach(w=>w.remove());
-  // remove transient file inputs created inside wrappers (if any left)
   Array.from(document.querySelectorAll('.interactive-wrapper input[type="file"]')).forEach(f=>f.remove());
-  // reset input box and hide inputbar; persistent media (media-wrap) are NOT removed
   input.value = '';
   inputbar.style.display = 'none';
 }
 
-/* === renderInput === */
+/* === renderInput (kept intact except media/file render uses q.caption) === */
 function renderInput(q){
   input.value=''; currentAnswer=null;
   inputbar.style.display='flex';
   input.type='text';
   input.placeholder=q.question || '';
 
-  // CLOSING: show and auto-advance so items after closing (including media) show
   if(q.type === 'closing'){
     appendBubble(q.question || '—','bot');
     if(q.closing) appendBubble(q.closing,'bot');
-    // no interactive elements to clear for closing; advance to next item
     idx++;
     setTimeout(()=>nextQuestion(), 260);
     return;
   }
 
-  // TEXTAREA
   if(q.type==='textarea'){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
@@ -144,7 +140,6 @@ function renderInput(q){
     return;
   }
 
-  // CHOICE / DROPDOWN
   if(q.type==='choice' || q.type==='dropdown'){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
@@ -165,7 +160,6 @@ function renderInput(q){
     return;
   }
 
-  // CHECKBOX
   if(q.type==='checkbox'){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
@@ -193,7 +187,6 @@ function renderInput(q){
     return;
   }
 
-  // LINEAR SCALE (rating)
   if(q.type==='linear_scale' || q.type==='rating'){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
@@ -215,7 +208,6 @@ function renderInput(q){
     return;
   }
 
-  // MULTIPLE CHOICE GRID / CHECKBOX GRID
   if(q.type==='multiple_choice_grid' || q.type==='checkbox_grid'){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper mc-grid';
@@ -267,17 +259,15 @@ function renderInput(q){
     return;
   }
 
-  // FILE: if admin-provided URL exists -> show admin media persistently; else show upload UI
+  // FILE: admin-file vs user-upload
   if(q.type==='file'){
     if(q.url){
-      // admin file: render persistently (not inside interactive wrapper)
-      renderMedia(q.url, q.question);
-      // advance
+      // use caption (if any) — admin provided file preview (persistent)
+      renderMedia(q.url, q.caption || '');
       idx++;
       setTimeout(()=>nextQuestion(), 420);
       return;
     }
-    // else user upload case
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
     const help = document.createElement('div'); help.className='helper'; help.textContent='Klik "Pilih Fail" untuk buka picker (Gallery/Files).';
@@ -297,22 +287,20 @@ function renderInput(q){
     return;
   }
 
-  // MEDIA: admin media persistent (render and advance)
+  // MEDIA: admin media persistent (use caption not question)
   if(q.type==='media'){
     if(q.url){
-      renderMedia(q.url, q.question);
+      renderMedia(q.url, q.caption || '');
       idx++;
       setTimeout(()=>nextQuestion(), 420);
       return;
     } else {
-      // no url -> nothing to show, just advance
       idx++;
       setTimeout(()=>nextQuestion(), 60);
       return;
     }
   }
 
-  // DATE / TIME
   if(q.type==='date' || q.type==='time'){
     inputbar.style.display='flex';
     input.type = q.type;
@@ -320,7 +308,6 @@ function renderInput(q){
     return;
   }
 
-  // fallback text input
   input.type = 'text';
   input.placeholder = q.question;
 }
@@ -334,7 +321,8 @@ function nextQuestion(){
     return;
   }
   const q = questions[idx];
-  appendBubble(q.question,'bot');
+  // only append bot bubble if there's a non-empty question string
+  if(q.question && q.question.trim() !== '') appendBubble(q.question,'bot');
   setTimeout(()=>renderInput(q), 260);
 }
 
@@ -349,7 +337,7 @@ sendBtn.onclick = ()=>{
   nextQuestion();
 };
 
-/* === robust CSV fetch & parse === */
+/* === robust CSV fetch & parse (MINIMAL edits: add media_caption and avoid fallback for media/file) === */
 fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
   const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   if(!lines.length) throw new Error('CSV kosong atau tak dapat diakses');
@@ -368,18 +356,31 @@ fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
     return l.split(',').map(c=>c.trim());
   });
 
+  // header indexes (ADDED media_caption index only)
   const iNo = header.indexOf('no');
   const iType = header.indexOf('type');
   const iQ = header.indexOf('question / label') !== -1 ? header.indexOf('question / label') : header.indexOf('question');
   const iOpt = header.indexOf('options');
   const iFile = header.indexOf('file_url');
   const iClosing = header.indexOf('closing_template');
+  const iCaption = header.indexOf('media_caption'); // new column (last)
 
   questions = rows.map(r=>{
     const obj = {};
     obj.id = (r[iNo]||'').toString().trim() || ('q'+Math.random().toString(36).slice(2,6));
     obj.type = (r[iType]||'text').toString().trim();
-    obj.question = (r[iQ]||'').toString().trim() || ('Soalan '+obj.id);
+
+    // read raw question text
+    const rawQ = (r[iQ]||'').toString().trim();
+
+    // IMPORTANT: do NOT assign fallback "Soalan X" for admin media/file rows that have URL.
+    // For media/file with admin-provided URL we keep question empty unless explicitly provided.
+    if(obj.type === 'media' || (obj.type === 'file' && r[iFile])){
+      obj.question = rawQ; // no fallback for admin media/file
+    } else {
+      obj.question = rawQ || ('Soalan '+obj.id);
+    }
+
     if(r[iClosing]) obj.closing = (r[iClosing]||'').toString().trim();
     if(['choice','dropdown','checkbox','multiple_choice_grid','checkbox_grid'].includes(obj.type) && r[iOpt]){
       obj.options = (r[iOpt]||'').toString().split(';').map(s=>s.trim()).filter(Boolean);
@@ -387,13 +388,15 @@ fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
     if(obj.type==='linear_scale' || obj.type==='rating'){
       obj.max = parseInt((r[iOpt]||'').toString()) || 5;
     }
-    // Mark admin media/file if file_url present
+    // save url and caption if present
     if((obj.type==='file' || obj.type==='media') && r[iFile]){
       obj.url = (r[iFile]||'').toString().trim();
+      obj.caption = (iCaption !== -1 && r[iCaption]) ? r[iCaption].toString().trim() : '';
     }
     return obj;
   });
 
+  // start conversation AFTER questions built
   nextQuestion();
 }).catch(e=>{
   appendBubble('❌ Gagal muatkan soalan: '+(e.message||e),'bot');
