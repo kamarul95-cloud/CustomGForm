@@ -65,6 +65,8 @@ input[type=date], input[type=time]{padding:10px;border-radius:14px;border:1px so
 </div>
 
 <script>
+/* === KOD JAVASCRIPT YANG DIUBAHSUAI === */
+
 /* === CONFIG === */
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSF204UTvqeBbWfd9bllNI8dBjvjmuzOnAJ39EOihc0uC22BOm60B-Pkl5jAE5JvM5OVWvBmxMhHWIS/pub?output=csv';
 
@@ -99,7 +101,11 @@ function detectMediaType(url){
 /* === renderMedia: only show caption if non-empty === */
 function renderMedia(url,label=''){
   const wrap=document.createElement('div'); wrap.className='media-wrap';
-  if(label && label.trim() !== ''){ const lab=document.createElement('div'); lab.className='label'; lab.textContent=label; wrap.appendChild(lab); }
+  // Use a temporary div to render text content and then extract
+  const tempDiv = document.createElement('div'); tempDiv.textContent = label;
+  const processedLabel = tempDiv.innerHTML.replace(/\(([^)]+)\)/g, (match, key) => responses[key] || match);
+  if(processedLabel && processedLabel.trim() !== ''){ const lab=document.createElement('div'); lab.className='label'; lab.innerHTML=processedLabel; wrap.appendChild(lab); }
+  
   const type=detectMediaType(url);
   if(type==='image'){ const img=document.createElement('img'); img.src=url; img.alt=label||''; wrap.appendChild(img); }
   else if(type==='video'){ const vid=document.createElement('video'); vid.src=url; vid.controls=true; wrap.appendChild(vid); }
@@ -138,15 +144,32 @@ function clearInteractiveElements(){
   inputbar.style.display = 'none';
 }
 
-/* === renderInput (kept intact except media/file render uses q.caption) === */
+/**
+ * Renders the input elements for the current question.
+ * @param {object} q - The current question object.
+ */
 function renderInput(q){
   input.value=''; currentAnswer=null;
   inputbar.style.display='flex';
   input.type='text';
-  input.placeholder=q.question || '';
+
+  // --- START: Interpolasi Jawapan (Placeholder) ---
+  const originalQuestion = q.question || '';
+  const processedQuestion = originalQuestion.replace(/\(([^)]+)\)/g, (match, key) => {
+      // 'key' should be the question number (e.g., '1' from '(1)')
+      // Look up the response using the key
+      const responseValue = responses[key];
+      // Return the response, or the original placeholder if not found
+      return responseValue !== undefined ? responseValue : match;
+  });
+  
+  // Use the processed question for the bubble and input placeholder
+  const bubbleText = processedQuestion;
+  input.placeholder= processedQuestion;
+  // --- END: Interpolasi Jawapan (Placeholder) ---
 
   if(q.type === 'closing'){
-    if(q.question && q.question.trim()!=='') appendBubble(q.question,'bot');
+    if(bubbleText && bubbleText.trim()!=='') appendBubble(bubbleText,'bot');
     if(q.closing && q.closing.trim()!=='') appendBubble(q.closing,'bot');
     idx = questions.length;
     clearInteractiveElements();
@@ -154,7 +177,15 @@ function renderInput(q){
     return;
   }
 
+  // --- Append Bot Bubble for current question text (after interpolation) ---
+  if(q.type !== 'media' && q.type !== 'file' && bubbleText && bubbleText.trim() !== ''){
+      appendBubble(bubbleText, 'bot');
+  }
+  // --- END Append Bot Bubble ---
+
+
   if(q.type==='textarea'){
+    // Since we appended the bot bubble above, we only need to render the input.
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
     const ta = document.createElement('textarea'); ta.placeholder = q.question; ta.rows = 4; ta.style.width='100%';
@@ -162,7 +193,7 @@ function renderInput(q){
     btn.onclick = ()=>{
       const val = ta.value.trim(); if(!val) return alert('Sila isi jawapan');
       appendBubble(val,'user');
-      responses[q.id] = val;
+      responses[q.id] = val; // Save response using the ID (the question number)
       clearInteractiveElements();
       idx++;
       nextQuestion();
@@ -180,7 +211,7 @@ function renderInput(q){
       const b=document.createElement('button'); b.className='choice'; b.textContent=opt;
       b.onclick = ()=>{
         appendBubble(opt,'user');
-        responses[q.id] = opt;
+        responses[q.id] = opt; // Save response using the ID (the question number)
         clearInteractiveElements();
         idx++;
         nextQuestion();
@@ -209,7 +240,7 @@ function renderInput(q){
     submitBtn.onclick = ()=>{
       if(selected.length===0) return alert('Sila pilih sekurang-kurangnya satu!');
       appendBubble(selected.join(', '),'user');
-      responses[q.id] = selected.slice();
+      responses[q.id] = selected.slice().join(', '); // Save as comma-separated string for simpler placeholder
       clearInteractiveElements();
       idx++;
       nextQuestion();
@@ -227,8 +258,9 @@ function renderInput(q){
     for(let i=1;i<=max;i++){
       const b = document.createElement('button'); b.className='choice'; b.textContent = i;
       b.onclick = ()=>{
-        appendBubble(String(i),'user');
-        responses[q.id] = i;
+        const val = String(i);
+        appendBubble(val,'user');
+        responses[q.id] = val; // Save response using the ID (the question number)
         clearInteractiveElements();
         idx++;
         nextQuestion();
@@ -243,7 +275,10 @@ function renderInput(q){
   if(q.type==='multiple_choice_grid' || q.type==='checkbox_grid'){
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper mc-grid';
+    const gridResponses = [];
+    
     if(q.type==='checkbox_grid'){
+      // Simplified: only allow one choice per group/row for easy placeholder (as per choice grid)
       const joined = (Array.isArray(q.options) ? q.options.join(';') : (q.options||'')).toString();
       const parts = joined.split(/\s*;\s*/).filter(Boolean);
       const groups = {};
@@ -256,14 +291,25 @@ function renderInput(q){
           groups['Pilihan'] = groups['Pilihan'] || []; groups['Pilihan'].push(p.trim());
         }
       });
+      
+      const selectionMap = {};
+      
       Object.keys(groups).forEach(k=>{
         const label = document.createElement('div'); label.className='helper'; label.textContent = k;
         const rowWrap = document.createElement('div'); rowWrap.className='mc-row';
         groups[k].forEach(opt=>{
           const btn = document.createElement('button'); btn.className='choice'; btn.textContent = opt;
           btn.onclick = ()=>{
-            appendBubble(`${k}: ${opt}`,'user');
-            responses[q.id] = responses[q.id] || []; responses[q.id].push(`${k}: ${opt}`);
+            // Update UI for single selection in this group
+            Array.from(rowWrap.querySelectorAll('.choice')).forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            selectionMap[k] = opt; // Store the selection
+            
+            // Generate response array for the user bubble and final response
+            const finalResponse = Object.keys(selectionMap).map(key => `${key}: ${selectionMap[key]}`);
+            
+            appendBubble(finalResponse.join(', '),'user');
+            responses[q.id] = finalResponse.join(', '); // Save as string
             clearInteractiveElements();
             idx++;
             nextQuestion();
@@ -272,13 +318,16 @@ function renderInput(q){
         });
         wrapper.appendChild(label); wrapper.appendChild(rowWrap);
       });
-    } else {
+      // NOTE: For Checkbox Grid, the submit button approach is more complex for placeholder, 
+      // so this example keeps the simplified "click one to submit" logic.
+      
+    } else { // Multiple Choice Grid (Single selection)
       (q.options||[]).forEach(opt=>{
         const row = document.createElement('div'); row.className='mc-row';
         const btn = document.createElement('button'); btn.className='choice'; btn.textContent = opt;
         btn.onclick = ()=>{
           appendBubble(opt,'user');
-          responses[q.id] = opt;
+          responses[q.id] = opt; // Save response using the ID (the question number)
           clearInteractiveElements();
           idx++;
           nextQuestion();
@@ -295,11 +344,12 @@ function renderInput(q){
   if(q.type==='file'){
     if(q.url){
       // use caption (if any) — admin provided file preview (persistent)
-      renderMedia(q.url, q.caption || '');
+      renderMedia(q.url, q.caption || ''); // renderMedia handles caption interpolation now
       idx++;
       setTimeout(()=>nextQuestion(), 420);
       return;
     }
+    // user-upload logic
     inputbar.style.display='none';
     const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
     const help = document.createElement('div'); help.className='helper'; help.textContent='Klik "Pilih Fail" untuk buka picker (Gallery/Files).';
@@ -308,7 +358,7 @@ function renderInput(q){
     submitBtn.onclick = ()=>{
       const f = fileInput.files[0]; if(!f) return alert('Sila pilih fail');
       appendBubble(f.name,'user');
-      responses[q.id] = f.name;
+      responses[q.id] = f.name; // Save filename for placeholder
       renderMedia(URL.createObjectURL(f), f.name);
       clearInteractiveElements();
       idx++;
@@ -322,7 +372,8 @@ function renderInput(q){
   // MEDIA: admin media persistent (use caption not question)
   if(q.type==='media'){
     if(q.url){
-      renderMedia(q.url, q.caption || '');
+      // Only render media with interpolation, and then immediately move to next question
+      renderMedia(q.url, q.caption || ''); // renderMedia handles caption interpolation now
       idx++;
       setTimeout(()=>nextQuestion(), 420);
       return;
@@ -333,15 +384,14 @@ function renderInput(q){
     }
   }
 
-  if(q.type==='date' || q.type==='time'){
+  if(q.type==='date' || q.type==='time' || q.type==='number'){
     inputbar.style.display='flex';
     input.type = q.type;
-    input.placeholder = q.question;
     return;
   }
 
+  // Fallback for TEXT type
   input.type = 'text';
-  input.placeholder = q.question;
 }
 
 /* === progression & send handler === */
@@ -353,12 +403,13 @@ async function nextQuestion(){
     return;
   }
   const q = questions[idx];
-  // only append bot bubble if there's a non-empty question string and not closing,
-  // but show typing animation first
-  if(q.type !== 'closing' && q.question && q.question.trim() !== ''){
-    await showTyping(600); // show typing for 600ms (tweakable)
-    appendBubble(q.question,'bot');
-  }
+  
+  // 1. Show typing animation
+  await showTyping(600); 
+
+  // 2. Render input/question structure. 
+  // NOTE: The new logic for TEXT/DATE/TIME/NUMBER will append the bot bubble INSIDE renderInput() 
+  // after interpolating the placeholder. Media/File/Closing will handle their own.
   setTimeout(()=>renderInput(q), 260);
 }
 
@@ -366,14 +417,19 @@ sendBtn.onclick = ()=>{
   if(!currentAnswer) currentAnswer = input.value.trim();
   if(!currentAnswer) return alert('Sila isi jawapan!');
   appendBubble(currentAnswer,'user');
-  responses[questions[idx].id] = currentAnswer;
+  
+  // --- START: Simpan jawapan guna ID (nombor soalan) sebagai kunci ---
+  const currentQid = questions[idx].id;
+  responses[currentQid] = currentAnswer;
+  // --- END: Simpan jawapan guna ID (nombor soalan) sebagai kunci ---
+  
   clearInteractiveElements();
   currentAnswer = null; input.value = '';
   idx++;
   nextQuestion();
 };
 
-/* === robust CSV fetch & parse (MINIMAL edits: add media_caption and avoid fallback for media/file) === */
+/* === robust CSV fetch & parse (Minimal changes to ensure 'id' is a string of the question number) === */
 fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
   const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   if(!lines.length) throw new Error('CSV kosong atau tak dapat diakses');
@@ -392,29 +448,30 @@ fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
     return l.split(',').map(c=>c.trim());
   });
 
-  // header indexes (ADDED media_caption index only)
+  // header indexes
   const iNo = header.indexOf('no');
   const iType = header.indexOf('type');
   const iQ = header.indexOf('question / label') !== -1 ? header.indexOf('question / label') : header.indexOf('question');
   const iOpt = header.indexOf('options');
   const iFile = header.indexOf('file_url');
   const iClosing = header.indexOf('closing_template');
-  const iCaption = header.indexOf('media_caption'); // new column (last)
+  const iCaption = header.indexOf('media_caption');
 
   questions = rows.map(r=>{
     const obj = {};
-    obj.id = (r[iNo]||'').toString().trim() || ('q'+Math.random().toString(36).slice(2,6));
+    // --- START: Pastikan ID adalah nombor soalan sebagai STRING ---
+    const questionNumber = (r[iNo]||'').toString().trim();
+    obj.id = questionNumber || ('q'+Math.random().toString(36).slice(2,6));
+    // --- END: Pastikan ID adalah nombor soalan sebagai STRING ---
+
     obj.type = (r[iType]||'text').toString().trim();
 
-    // read raw question text
     const rawQ = (r[iQ]||'').toString().trim();
 
-    // IMPORTANT: do NOT assign fallback "Soalan X" for admin media/file rows that have URL.
-    // For media/file with admin-provided URL we keep question empty unless explicitly provided.
     if(obj.type === 'media' || (obj.type === 'file' && r[iFile])){
-      obj.question = rawQ; // no fallback for admin media/file
+      obj.question = rawQ; 
     } else {
-      obj.question = rawQ || ('Soalan '+obj.id);
+      obj.question = rawQ || (`Soalan ${questionNumber} (${obj.id})`);
     }
 
     if(r[iClosing]) obj.closing = (r[iClosing]||'').toString().trim();
