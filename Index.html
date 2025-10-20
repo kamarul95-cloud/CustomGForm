@@ -115,12 +115,13 @@ function renderInput(q){
   input.placeholder=q.question || '';
 
   if(q.type === 'closing'){
-    appendBubble(q.question || '—','bot');
-    if(q.closing) appendBubble(q.closing,'bot');
-    idx++;
-    setTimeout(()=>nextQuestion(), 260);
-    return;
-  }
+  if(q.question && q.question.trim()!=='') appendBubble(q.question,'bot');
+  if(q.closing && q.closing.trim()!=='') appendBubble(q.closing,'bot');
+  idx = questions.length; // pastikan idx set untuk tamat
+  clearInteractiveElements();
+  console.log('responses', responses);
+  return; // hentikan loop
+}
 
   if(q.type==='textarea'){
     inputbar.style.display='none';
@@ -315,14 +316,16 @@ function renderInput(q){
 /* === progression & send handler === */
 function nextQuestion(){
   if(idx >= questions.length){
-    appendBubble('Terima kasih! Semua soalan dijawab.','bot');
+    // sudah tamat
     console.log('responses', responses);
     clearInteractiveElements();
     return;
   }
   const q = questions[idx];
-  // only append bot bubble if there's a non-empty question string
-  if(q.question && q.question.trim() !== '') appendBubble(q.question,'bot');
+  // hanya append soalan normal, bukan closing
+  if(q.type !== 'closing' && q.question && q.question.trim() !== ''){
+    appendBubble(q.question,'bot');
+  }
   setTimeout(()=>renderInput(q), 260);
 }
 
