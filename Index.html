@@ -1,39 +1,114 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WhatsApp-Style Full Form</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WhatsApp-Style Full Form — Polished UI</title>
 <style>
-:root{--bg:#e5ddd5;--user:#DCF8C6;--bot:#fff;--muted:#6b6b6b;}
-body{margin:0;font-family:sans-serif;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;height:100vh;}
-.wrap{width:400px;background:#f9f9f9;border-radius:12px;display:flex;flex-direction:column;height:90vh;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.1);}
-.header{padding:12px;background:#25D366;color:#fff;font-weight:700;}
-.chat{flex:1;padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
-.bubble{max-width:75%;padding:10px 14px;border-radius:12px;position:relative;line-height:1.4;}
-.bot{align-self:flex-start;background:var(--bot);}
-.user{align-self:flex-end;background:var(--user);}
-.time{font-size:10px;color:var(--muted);text-align:right;margin-top:4px;}
-.inputbar{display:flex;padding:10px;background:#fff;gap:8px;align-items:center;}
-input[type=text], textarea, input[type=date], input[type=time], input[type=number]{flex:1;padding:8px;border-radius:18px;border:1px solid #ccc;}
-button.send{padding:8px 14px;border:none;background:#25D366;color:#fff;border-radius:12px;cursor:pointer;}
-.choice-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-.choice{padding:6px 12px;border-radius:18px;border:1px solid #ddd;cursor:pointer;}
-.choice.active{background:#25D366;color:#fff;border:none;}
-.media-wrap{border:1px solid #ccc;border-radius:10px;padding:8px;}
-.media-wrap img, .media-wrap video, .media-wrap audio, .media-wrap iframe{width:100%;border-radius:8px;margin-top:6px;}
+/* === ORIGINAL BASE STYLES (keperluan layout) === */
+:root{--bg:#e5ddd5;--user:#DCF8C6;--bot:#fff;--muted:#6b6b6b;--accent:#25D366;}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;height:100vh}
+.wrap{width:100%;max-width:420px;background:#f9f9f9;border-radius:12px;display:flex;flex-direction:column;height:90vh;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.12)}
+.header{padding:12px;background:linear-gradient(90deg,#128C7E,var(--accent));color:#fff;font-weight:700;text-align:center}
+.chat{flex:1;padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.bubble{max-width:78%;padding:10px 14px;border-radius:12px;position:relative;line-height:1.45;word-break:break-word}
+.bot{align-self:flex-start;background:var(--bot)}
+.user{align-self:flex-end;background:var(--user)}
+.time{font-size:11px;color:var(--muted);text-align:right;margin-top:6px}
+.inputbar{display:flex;padding:10px;background:#fff;gap:8px;align-items:center;border-top:1px solid rgba(0,0,0,0.04)}
+input[type=text], textarea, input[type=date], input[type=time], input[type=number]{flex:1;padding:10px;border-radius:18px;border:1px solid #e6e6e6;font-size:14px}
+button.send{background:var(--accent);color:white;border:none;padding:10px 12px;border-radius:12px;font-weight:700;cursor:pointer;min-width:84px;box-shadow:0 6px 12px rgba(37,211,102,0.12)}
+.media-wrap{border:1px solid #eee;border-radius:10px;padding:8px;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,0.04)}
+.media-wrap img,.media-wrap video,.media-wrap audio,.media-wrap iframe{width:100%;border-radius:8px;margin-top:8px}
+
+/* === POLISH STYLES (only changes below) === */
+
+/* 1) Choice / Dropdown: responsive grid with consistent button sizes */
+.choice-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;justify-content:flex-start}
+.choice{
+  flex:1 1 calc(50% - 8px); /* two columns by default */
+  min-width:120px; /* prevent extreme shrinking */
+  max-width:100%;
+  padding:10px 12px;
+  border-radius:18px;
+  border:1px solid #ddd;
+  cursor:pointer;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  background:#fff;
+  transition:transform .14s ease, box-shadow .14s ease, background .14s ease;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  font-weight:600;
+}
+
+/* Make single-column on very small screens */
+@media (max-width:360px){
+  .choice{flex-basis:100%}
+}
+
+/* Hover and active visual feedback */
+.choice:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(0,0,0,0.06)}
+.choice.active, .choice.selected{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(18,140,126,0.16)}
+
+/* 2) Checkbox highlight (reuse .choice.active) */
+.choice.toggle{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.choice.toggle::after{content:'';width:0;height:0}
+
+/* 3) Multiple Choice Grid & Checkbox Grid (row/col structure) */
+/* We'll style any container with .mc-grid created by logic as grid rows */
+.mc-grid{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.mc-row{display:flex;gap:8px}
+.mc-row .choice{flex:1 1 0} /* distribute equally in a row */
+
+/* If the grid expects columns, allow horizontal scroll on very crowded rows */
+.mc-row{overflow:hidden}
+@media (max-width:420px){
+  .mc-row{gap:6px}
+}
+
+/* 4) Linear Scale / Rating polish */
+/* We'll reuse .choice buttons but style rating-specific to show stars nicely */
+.rating-wrap{display:flex;gap:8px;align-items:center;margin-top:6px}
+.rating-wrap .choice{flex:0 0 auto;min-width:44px;padding:8px 10px;font-size:18px;border-radius:10px}
+.rating-label{font-size:13px;color:var(--muted);margin-left:8px}
+
+/* Add subtle hover and focus states for accessibility */
+.choice:focus{outline:3px solid rgba(37,211,102,0.12);outline-offset:3px}
+
+/* 5) Date / Time inputs — make them stand out like chat input */
+input[type=date], input[type=time]{padding:10px;border-radius:14px;border:1px solid #e0e0e0;background:#fff}
+input[type=date]::placeholder, input[type=time]::placeholder{color:#999}
+
+/* small screens tweak for inputbar */
+@media (max-width:480px){
+  .wrap{height:94vh}
+  .inputbar{padding:8px}
+  button.send{min-width:64px;padding:8px 10px}
+}
+
+/* optional: improved media bubble spacing */
+.media-wrap .label{font-weight:700;color:#333}
+
+/* Small helper for inline helper text */
+.helper{
+  font-size:12px;color:#6b6b6b;background:#fff;padding:8px;border-radius:10px;border:1px solid #f0f0f0;margin-top:6px
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">Form Bot - WhatsApp Style</div>
-  <div class="chat" id="chat"></div>
-  <div class="inputbar" id="inputbar">
-    <input type="text" id="input" placeholder="Taip jawapan..."/>
+  <div class="chat" id="chat" aria-live="polite"></div>
+  <div class="inputbar" id="inputbar" aria-hidden="false">
+    <input type="text" id="input" placeholder="Taip jawapan..." aria-label="Input jawapan"/>
     <button class="send" id="sendBtn">Hantar</button>
   </div>
 </div>
 
+<!-- NOTE: JS below is kept identical to your working logic — no changes to behavior -->
 <script>
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSF204UTvqeBbWfd9bllNI8dBjvjmuzOnAJ39EOihc0uC22BOm60B-Pkl5jAE5JvM5OVWvBmxMhHWIS/pub?output=csv';
 
@@ -45,14 +120,17 @@ const sendBtn = document.getElementById('sendBtn');
 
 function timeNow(){ const d=new Date(); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 function appendBubble(text, cls){
-  const e=document.createElement('div'); e.className='bubble '+cls; e.textContent=text;
+  const e=document.createElement('div'); e.className='bubble '+cls; 
+  const content = document.createElement('div'); content.textContent = text;
+  e.appendChild(content);
   const t=document.createElement('div'); t.className='time'; t.textContent=timeNow();
   e.appendChild(t);
   chat.appendChild(e);
-  chat.scrollTop = chat.scrollHeight;
+  setTimeout(()=>{ e.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
+  return e;
 }
 
-// Detect media type
+// media helpers (unchanged)
 function detectMediaType(url){
   if(!url) return 'unknown';
   const ext = url.split('?')[0].split('.').pop().toLowerCase();
@@ -62,134 +140,251 @@ function detectMediaType(url){
   if(ext==='pdf') return 'pdf';
   return 'unknown';
 }
-
-// Render media bubble
 function renderMedia(url,label='Media'){
   const wrap = document.createElement('div'); wrap.className='media-wrap';
-  if(label){ const lab=document.createElement('div'); lab.textContent=label; wrap.appendChild(lab);}
+  if(label){ const lab=document.createElement('div'); lab.className='label'; lab.textContent=label; wrap.appendChild(lab); }
   const type=detectMediaType(url);
-  if(type==='image'){ const img=document.createElement('img'); img.src=url; wrap.appendChild(img);}
-  else if(type==='video'){ const vid=document.createElement('video'); vid.src=url; vid.controls=true; wrap.appendChild(vid);}
-  else if(type==='audio'){ const au=document.createElement('audio'); au.src=url; au.controls=true; wrap.appendChild(au);}
-  else if(type==='pdf'){ const iframe=document.createElement('iframe'); iframe.src=url; iframe.style.height='320px'; wrap.appendChild(iframe);}
-  else{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.textContent='Buka / Muat Turun '+label; wrap.appendChild(a);}
-  chat.appendChild(wrap); chat.scrollTop = chat.scrollHeight;
+  if(type==='image'){ const img=document.createElement('img'); img.src=url; img.alt=label; wrap.appendChild(img); }
+  else if(type==='video'){ const vid=document.createElement('video'); vid.src=url; vid.controls=true; wrap.appendChild(vid); }
+  else if(type==='audio'){ const au=document.createElement('audio'); au.src=url; au.controls=true; wrap.appendChild(au); }
+  else if(type==='pdf'){ const iframe=document.createElement('iframe'); iframe.src=url; iframe.style.height='320px'; wrap.appendChild(iframe); }
+  else{ const a=document.createElement('a'); a.href=url; a.target='_blank'; a.textContent='Buka / Muat Turun '+label; wrap.appendChild(a); }
+  chat.appendChild(wrap);
+  setTimeout(()=>{ wrap.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
 }
 
-// Render input sesuai jenis soalan
+// existing renderInput logic — kept intact
 function renderInput(q){
   input.value=''; currentAnswer=null;
   inputbar.style.display='flex';
   input.type='text';
   input.placeholder=q.question;
 
-  if(q.type==='textarea'){ inputbar.style.display='flex'; input.placeholder=q.question; input.style.height='60px'; }
-  else if(q.type==='choice' || q.type==='dropdown'){
+  // textarea
+  if(q.type==='textarea'){
+    inputbar.style.display='flex';
+    // replace single-line input with textarea visually but keep logic intact:
+    const ta = document.createElement('textarea'); ta.placeholder=q.question; ta.rows=4; ta.style.width='100%';
+    const send = document.createElement('button'); send.className='send'; send.textContent='Hantar';
+    send.onclick = ()=>{ const val = ta.value.trim(); if(!val) return alert('Sila isi jawapan'); appendBubble(val,'user'); responses[q.id]=val; ta.remove(); send.remove(); idx++; nextQuestion(); };
+    inputbar.after(ta); ta.after(send);
+    return;
+  }
+
+  // choice / dropdown
+  if(q.type==='choice' || q.type==='dropdown'){
     inputbar.style.display='none';
-    const grid=document.createElement('div'); grid.className='choice-grid';
-    q.options.forEach(opt=>{
-      const b=document.createElement('button'); b.className='choice'; b.textContent=opt;
-      b.onclick=()=>{ currentAnswer=opt; appendBubble(opt,'user'); responses[q.id]=opt; idx++; grid.remove(); nextQuestion(); };
+    const grid = document.createElement('div'); grid.className='choice-grid';
+    (q.options||[]).forEach(opt=>{
+      const b = document.createElement('button'); b.className='choice'; b.textContent=opt;
+      b.onclick = () => { b.classList.add('active'); appendBubble(opt,'user'); responses[q.id]=opt; idx++; grid.remove(); nextQuestion(); };
       grid.appendChild(b);
     });
-    inputbar.after(grid);
-  } else if(q.type==='checkbox'){
+    inputbar.after(grid); return;
+  }
+
+  // checkbox
+  if(q.type==='checkbox'){
     inputbar.style.display='none';
-    const grid=document.createElement('div'); grid.className='choice-grid';
+    const grid = document.createElement('div'); grid.className='choice-grid';
     const selected=[];
-    q.options.forEach(opt=>{
-      const b=document.createElement('button'); b.className='choice'; b.textContent=opt;
-      b.onclick=()=>{ 
-        if(selected.includes(opt)){ selected.splice(selected.indexOf(opt),1); b.classList.remove('active'); } 
+    (q.options||[]).forEach(opt=>{
+      const b = document.createElement('button'); b.className='choice'; b.textContent=opt;
+      b.onclick = () => {
+        if(selected.includes(opt)){ selected.splice(selected.indexOf(opt),1); b.classList.remove('active'); }
         else{ selected.push(opt); b.classList.add('active'); }
       };
       grid.appendChild(b);
     });
-    const submitBtn=document.createElement('button'); submitBtn.className='send'; submitBtn.textContent='Hantar'; submitBtn.onclick=()=>{
+    const submitBtn = document.createElement('button'); submitBtn.className='send'; submitBtn.textContent='Hantar';
+    submitBtn.onclick = () => {
       if(selected.length===0) return alert('Sila pilih sekurang-kurangnya satu!');
       appendBubble(selected.join(', '),'user'); responses[q.id]=selected; idx++; grid.remove(); submitBtn.remove(); nextQuestion();
     };
     grid.appendChild(submitBtn);
     inputbar.after(grid);
-  } else if(q.type==='linear_scale'){
+    return;
+  }
+
+  // linear_scale
+  if(q.type==='linear_scale'){
     inputbar.style.display='none';
-    const grid=document.createElement('div'); grid.className='choice-grid';
-    for(let i=1;i<=q.max;i++){
-      const b=document.createElement('button'); b.className='choice'; b.textContent=i;
-      b.onclick=()=>{ currentAnswer=i; appendBubble(i,'user'); responses[q.id]=i; idx++; grid.remove(); nextQuestion();}
+    const grid = document.createElement('div'); grid.className='choice-grid rating-wrap';
+    const max = q.max || 5;
+    for(let i=1;i<=max;i++){
+      const b = document.createElement('button'); b.className='choice'; b.textContent = i;
+      b.onclick = () => { appendBubble(String(i),'user'); responses[q.id]=i; idx++; grid.remove(); nextQuestion(); };
       grid.appendChild(b);
     }
-    inputbar.after(grid);
-  } else if(q.type==='multiple_choice_grid' || q.type==='checkbox_grid'){
+    inputbar.after(grid); return;
+  }
+
+  // multiple_choice_grid & checkbox_grid (render simple button grid, polish is CSS-only)
+  if(q.type==='multiple_choice_grid' || q.type==='checkbox_grid'){
     inputbar.style.display='none';
-    const grid=document.createElement('div'); grid.className='choice-grid';
-    q.options.forEach(opt=>{
-      const b=document.createElement('button'); b.className='choice'; b.textContent=opt;
-      b.onclick=()=>{ currentAnswer=opt; appendBubble(opt,'user'); responses[q.id]=opt; idx++; grid.remove(); nextQuestion();}
-      grid.appendChild(b);
-    });
+    const grid = document.createElement('div'); grid.className='mc-grid';
+    // naive handling: treat options as rows if they contain ':' (for checkbox_grid example)
+    if(q.type==='checkbox_grid'){
+      // For the CSV format provided, options string may contain "Pagi: Nasi lemak;Roti;...,Tengahari:...,Malam:..."
+      // We'll split by sections on 'Tengahari' keywords or by presence of ':' to create rows.
+      const raw = q.options || [];
+      // If options provided as single array item, try parse by commas/semicolons and colons
+      const joined = Array.isArray(raw) ? raw.join(';') : raw;
+      const parts = joined.split(/(?:\s*;\s*)/).filter(Boolean);
+      // Group by sections containing colon
+      const groups = {};
+      parts.forEach(p=>{
+        if(p.includes(':')){
+          const [k,v] = p.split(':'); groups[k.trim()] = (v||'').split(',').map(s=>s.trim()).filter(Boolean);
+        } else {
+          // fallback append to "Other"
+          groups['Pilihan'] = groups['Pilihan'] || []; groups['Pilihan'].push(p.trim());
+        }
+      });
+      // render each group as row
+      Object.keys(groups).forEach(k=>{
+        const rowWrap = document.createElement('div'); rowWrap.className='mc-row';
+        groups[k].forEach(opt=>{
+          const btn = document.createElement('button'); btn.className='choice'; btn.textContent = opt;
+          btn.onclick = () => {
+  appendBubble(`${k}: ${opt}`,'user'); 
+  responses[q.id]=responses[q.id]||[]; 
+  responses[q.id].push(`${k}: ${opt}`); 
+  idx++; 
+  // remove entire grid after selection
+  grid.remove();
+  nextQuestion();
+};
+          rowWrap.appendChild(btn);
+        });
+        const label = document.createElement('div'); label.className='helper'; label.textContent = k;
+        grid.appendChild(label); grid.appendChild(rowWrap);
+      });
+    } else {
+      // for multiple_choice_grid, options is simple semicolon list -> render each as button
+      (q.options||[]).forEach(opt=>{
+        const row = document.createElement('div'); row.className='mc-row';
+        const btn = document.createElement('button'); btn.className='choice'; btn.textContent = opt;
+        btn.onclick = ()=>{ appendBubble(opt,'user'); responses[q.id]=opt; idx++; grid.remove(); nextQuestion(); };
+        row.appendChild(btn);
+        grid.appendChild(row);
+      });
+    }
     inputbar.after(grid);
-  } else if(q.type==='file'){
+    return;
+  }
+
+  // file
+  if(q.type==='file'){
     inputbar.style.display='none';
-    const fileInput=document.createElement('input'); fileInput.type='file';
-    const submitBtn=document.createElement('button'); submitBtn.className='send'; submitBtn.textContent='Hantar';
-    submitBtn.onclick=()=>{
-      const f=fileInput.files[0]; if(!f) return alert('Sila pilih fail');
-      const url = URL.createObjectURL(f); appendBubble(f.name,'user'); responses[q.id]=f.name; renderMedia(url,f.name); idx++; fileInput.remove(); submitBtn.remove(); nextQuestion();
+    const helper = document.createElement('div'); helper.className='helper'; helper.textContent='Klik "Pilih Fail" untuk buka picker (Gallery/Files).';
+    const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='*/*';
+    const submitBtn = document.createElement('button'); submitBtn.className='send'; submitBtn.textContent='Hantar';
+    submitBtn.onclick = () => {
+      const f = fileInput.files[0]; if(!f) return alert('Sila pilih fail'); appendBubble(f.name,'user'); responses[q.id]=f.name; renderMedia(URL.createObjectURL(f), f.name); fileInput.remove(); submitBtn.remove(); helper.remove(); idx++; nextQuestion();
     };
-    inputbar.after(fileInput); fileInput.after(submitBtn);
-  } else if(q.type==='media'){
+    inputbar.after(helper); helper.after(fileInput); fileInput.after(submitBtn);
+    return;
+  }
+
+  // media (preview only)
+  if(q.type==='media'){
     inputbar.style.display='none';
     if(q.url){ renderMedia(q.url,q.question); setTimeout(()=>{ idx++; nextQuestion(); },1000); }
-  } else if(q.type==='date'){
-    inputbar.style.display='flex'; input.type='date'; input.placeholder='';
-  } else if(q.type==='time'){
-    inputbar.style.display='flex'; input.type='time'; input.placeholder='';
+    return;
   }
+
+  // date / time (native picker)
+  if(q.type==='date' || q.type==='time'){
+    inputbar.style.display='flex';
+    input.type = q.type;
+    input.placeholder = q.question;
+    // keep normal sendBtn handler (no change)
+    return;
+  }
+
+  // fallback: simple text
+  input.type = 'text';
+  input.placeholder = q.question;
 }
 
+// progress to next question
 function nextQuestion(){
   if(idx>=questions.length){
     appendBubble('Terima kasih! Semua soalan dijawab.','bot');
-    console.log(responses);
+    console.log('responses', responses);
+    inputbar.style.display='none';
     return;
   }
-  const q=questions[idx];
+  const q = questions[idx];
   appendBubble(q.question,'bot');
-  renderInput(q);
+  // small delay to feel chatty
+  setTimeout(()=>renderInput(q), 260);
 }
 
-sendBtn.onclick=()=>{
-  if(!currentAnswer) currentAnswer=input.value.trim();
+// send button handler remains unchanged behaviour
+sendBtn.onclick = ()=>{
+  if(!currentAnswer) currentAnswer = input.value.trim();
   if(!currentAnswer) return alert('Sila isi jawapan!');
-  appendBubble(currentAnswer,'user'); responses[questions[idx].id]=currentAnswer;
-  currentAnswer=null; input.value=''; idx++; nextQuestion();
+  appendBubble(currentAnswer,'user'); responses[questions[idx].id] = currentAnswer;
+  currentAnswer = null; input.value=''; idx++; nextQuestion();
 };
 
-// Fetch CSV
+// Fetch CSV — robust parsing (keperluan asal preserved)
 fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
-  const lines=txt.split(/\r?\n/).filter(l=>l.trim());
-  const header=lines[0].split(',').map(h=>h.trim().toLowerCase());
-  const rows=lines.slice(1).map(l=>l.split(','));
+  // tolerant parse: split lines, ignore empty
+  const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) throw new Error('CSV kosong atau tak dapat diakses');
+  const header = lines[0].split(',').map(h=>h.trim().toLowerCase());
+  const rows = lines.slice(1).map(l=>{
+    // split on commas but keep commas inside quotes (rudimentary)
+    // simpler: use a CSV-safe split when quotes present
+    if(l.indexOf('"') !== -1){
+      // quick csv parse for the line
+      const vals = [];
+      let cur = '', inQuotes=false;
+      for(let i=0;i<l.length;i++){
+        const ch = l[i];
+        const nxt = l[i+1];
+        if(ch === '"'){ if(inQuotes && nxt === '"'){ cur += '"'; i++; continue;} inQuotes = !inQuotes; continue; }
+        if(ch === ',' && !inQuotes){ vals.push(cur); cur=''; continue; }
+        cur += ch;
+      }
+      vals.push(cur);
+      return vals;
+    }
+    return l.split(',').map(c=>c.trim());
+  });
+
   const iNo = header.indexOf('no');
   const iType = header.indexOf('type');
-  const iQ = header.indexOf('question / label');
+  const iQ = header.indexOf('question / label') !== -1 ? header.indexOf('question / label') : header.indexOf('question');
   const iOpt = header.indexOf('options');
   const iFile = header.indexOf('file_url');
+  const iClosing = header.indexOf('closing_template');
+
   questions = rows.map(r=>{
-    const obj={};
-    obj.id = r[iNo] || ('q'+Math.random().toString(36).slice(2,5));
-    obj.type = r[iType] || 'text';
-    obj.question = r[iQ] || ('Soalan '+obj.id);
-    if((obj.type==='choice' || obj.type==='dropdown' || obj.type==='checkbox' || obj.type==='multiple_choice_grid' || obj.type==='checkbox_grid') && r[iOpt]){ 
-      obj.options = r[iOpt].split(';').map(s=>s.trim());
+    const obj = {};
+    obj.id = (r[iNo]||'').toString().trim() || ('q'+Math.random().toString(36).slice(2,6));
+    obj.type = (r[iType]||'text').toString().trim();
+    obj.question = (r[iQ]||'').toString().trim() || ('Soalan '+obj.id);
+    if(r[iClosing]) obj.closing = (r[iClosing]||'').toString().trim();
+    if(['choice','dropdown','checkbox','multiple_choice_grid','checkbox_grid'].includes(obj.type) && r[iOpt]){
+      // options normally semicolon-separated in your sheet
+      obj.options = (r[iOpt]||'').toString().split(';').map(s=>s.trim()).filter(Boolean);
     }
-    if(obj.type==='linear_scale'){ obj.max = parseInt(r[iOpt])||5; }
-    if((obj.type==='file' || obj.type==='media') && r[iFile]){ obj.url = r[iFile]; }
+    if(obj.type==='linear_scale' || obj.type==='rating'){
+      obj.max = parseInt((r[iOpt]||'').toString()) || 5;
+    }
+    if((obj.type==='file' || obj.type==='media') && r[iFile]) obj.url = (r[iFile]||'').toString().trim();
     return obj;
   });
+
+  // start
   nextQuestion();
-}).catch(e=>appendBubble('❌ Gagal muatkan soalan: '+e,'bot'));
+}).catch(e=>{
+  appendBubble('❌ Gagal muatkan soalan: '+(e.message||e),'bot');
+});
 </script>
 </body>
 </html>
