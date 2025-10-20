@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WhatsApp-Style Full Form — Polished UI</title>
+<title>WhatsApp-Style Full Form — Fixed</title>
 <style>
-/* === ORIGINAL BASE STYLES (keperluan layout) === */
 :root{--bg:#e5ddd5;--user:#DCF8C6;--bot:#fff;--muted:#6b6b6b;--accent:#25D366;}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;height:100vh}
@@ -22,80 +21,26 @@ button.send{background:var(--accent);color:white;border:none;padding:10px 12px;b
 .media-wrap{border:1px solid #eee;border-radius:10px;padding:8px;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,0.04)}
 .media-wrap img,.media-wrap video,.media-wrap audio,.media-wrap iframe{width:100%;border-radius:8px;margin-top:8px}
 
-/* === POLISH STYLES (only changes below) === */
-
-/* 1) Choice / Dropdown: responsive grid with consistent button sizes */
+/* POLISH STYLES */
 .choice-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;justify-content:flex-start}
-.choice{
-  flex:1 1 calc(50% - 8px); /* two columns by default */
-  min-width:120px; /* prevent extreme shrinking */
-  max-width:100%;
-  padding:10px 12px;
-  border-radius:18px;
-  border:1px solid #ddd;
-  cursor:pointer;
-  text-align:center;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  background:#fff;
-  transition:transform .14s ease, box-shadow .14s ease, background .14s ease;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
-  font-weight:600;
-}
-
-/* Make single-column on very small screens */
-@media (max-width:360px){
-  .choice{flex-basis:100%}
-}
-
-/* Hover and active visual feedback */
+.choice{flex:1 1 calc(50% - 8px);min-width:120px;max-width:100%;padding:10px 12px;border-radius:18px;border:1px solid #ddd;cursor:pointer;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;transition:transform .14s ease, box-shadow .14s ease, background .14s ease;box-shadow: 0 1px 0 rgba(0,0,0,0.03);font-weight:600}
+@media (max-width:360px){.choice{flex-basis:100%}}
 .choice:hover{transform:translateY(-3px);box-shadow:0 8px 18px rgba(0,0,0,0.06)}
 .choice.active, .choice.selected{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 8px 20px rgba(18,140,126,0.16)}
-
-/* 2) Checkbox highlight (reuse .choice.active) */
 .choice.toggle{display:inline-flex;align-items:center;justify-content:center;gap:8px}
-.choice.toggle::after{content:'';width:0;height:0}
-
-/* 3) Multiple Choice Grid & Checkbox Grid (row/col structure) */
-/* We'll style any container with .mc-grid created by logic as grid rows */
 .mc-grid{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-.mc-row{display:flex;gap:8px}
-.mc-row .choice{flex:1 1 0} /* distribute equally in a row */
-
-/* If the grid expects columns, allow horizontal scroll on very crowded rows */
-.mc-row{overflow:hidden}
-@media (max-width:420px){
-  .mc-row{gap:6px}
-}
-
-/* 4) Linear Scale / Rating polish */
-/* We'll reuse .choice buttons but style rating-specific to show stars nicely */
+.mc-row{display:flex;gap:8px;overflow:hidden}
+.mc-row .choice{flex:1 1 0}
 .rating-wrap{display:flex;gap:8px;align-items:center;margin-top:6px}
 .rating-wrap .choice{flex:0 0 auto;min-width:44px;padding:8px 10px;font-size:18px;border-radius:10px}
-.rating-label{font-size:13px;color:var(--muted);margin-left:8px}
-
-/* Add subtle hover and focus states for accessibility */
 .choice:focus{outline:3px solid rgba(37,211,102,0.12);outline-offset:3px}
-
-/* 5) Date / Time inputs — make them stand out like chat input */
 input[type=date], input[type=time]{padding:10px;border-radius:14px;border:1px solid #e0e0e0;background:#fff}
-input[type=date]::placeholder, input[type=time]::placeholder{color:#999}
-
-/* small screens tweak for inputbar */
-@media (max-width:480px){
-  .wrap{height:94vh}
-  .inputbar{padding:8px}
-  button.send{min-width:64px;padding:8px 10px}
-}
-
-/* optional: improved media bubble spacing */
+@media (max-width:480px){.wrap{height:94vh}.inputbar{padding:8px}button.send{min-width:64px;padding:8px 10px}}
 .media-wrap .label{font-weight:700;color:#333}
+.helper{font-size:12px;color:#6b6b6b;background:#fff;padding:8px;border-radius:10px;border:1px solid #f0f0f0;margin-top:6px}
 
-/* Small helper for inline helper text */
-.helper{
-  font-size:12px;color:#6b6b6b;background:#fff;padding:8px;border-radius:10px;border:1px solid #f0f0f0;margin-top:6px
-}
+/* interactive wrapper marker (for JS cleanup) */
+.interactive-wrapper{margin-top:6px}
 </style>
 </head>
 <body>
@@ -108,20 +53,21 @@ input[type=date]::placeholder, input[type=time]::placeholder{color:#999}
   </div>
 </div>
 
-<!-- NOTE: JS below is kept identical to your working logic — no changes to behavior -->
 <script>
+/* === CONFIG === */
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSF204UTvqeBbWfd9bllNI8dBjvjmuzOnAJ39EOihc0uC22BOm60B-Pkl5jAE5JvM5OVWvBmxMhHWIS/pub?output=csv';
 
-let questions=[], idx=0, responses={}, currentAnswer=null;
+let questions = [], idx = 0, responses = {}, currentAnswer = null;
 const chat = document.getElementById('chat');
 const input = document.getElementById('input');
 const inputbar = document.getElementById('inputbar');
 const sendBtn = document.getElementById('sendBtn');
 
+/* === helpers === */
 function timeNow(){ const d=new Date(); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
 function appendBubble(text, cls){
-  const e=document.createElement('div'); e.className='bubble '+cls; 
-  const content = document.createElement('div'); content.textContent = text;
+  const e=document.createElement('div'); e.className='bubble '+cls;
+  const content=document.createElement('div'); content.textContent = text;
   e.appendChild(content);
   const t=document.createElement('div'); t.className='time'; t.textContent=timeNow();
   e.appendChild(t);
@@ -129,8 +75,6 @@ function appendBubble(text, cls){
   setTimeout(()=>{ e.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
   return e;
 }
-
-// media helpers (unchanged)
 function detectMediaType(url){
   if(!url) return 'unknown';
   const ext = url.split('?')[0].split('.').pop().toLowerCase();
@@ -141,7 +85,7 @@ function detectMediaType(url){
   return 'unknown';
 }
 function renderMedia(url,label='Media'){
-  const wrap = document.createElement('div'); wrap.className='media-wrap';
+  const wrap=document.createElement('div'); wrap.className='media-wrap';
   if(label){ const lab=document.createElement('div'); lab.className='label'; lab.textContent=label; wrap.appendChild(lab); }
   const type=detectMediaType(url);
   if(type==='image'){ const img=document.createElement('img'); img.src=url; img.alt=label; wrap.appendChild(img); }
@@ -153,205 +97,262 @@ function renderMedia(url,label='Media'){
   setTimeout(()=>{ wrap.scrollIntoView({behavior:'smooth', block:'center'}); }, 30);
 }
 
-// existing renderInput logic — kept intact
+/* === NEW: cleanup helper (removes interactive elements only) === */
+function clearInteractiveElements(){
+  // remove any element we created with class interactive-wrapper
+  const wrappers = Array.from(document.querySelectorAll('.interactive-wrapper'));
+  wrappers.forEach(w=>w.remove());
+  // if any temporary file inputs remain, remove them too
+  Array.from(document.querySelectorAll('input[type="file"]')).forEach(f=>{
+    // only remove file inputs that are not part of the persistent DOM (we create them)
+    if(f.closest('.wrap')) f.remove();
+  });
+  // clear textarea placeholders / reset input
+  input.value = '';
+  // hide the inputbar by default; nextQuestion will decide if it shows again
+  inputbar.style.display = 'none';
+}
+
+/* === renderInput (kept logic, but wrappers added and calls to clearInteractiveElements) === */
 function renderInput(q){
+  // reset
   input.value=''; currentAnswer=null;
   inputbar.style.display='flex';
   input.type='text';
-  input.placeholder=q.question;
+  input.placeholder=q.question || '';
 
-  // textarea
+  // TEXTAREA
   if(q.type==='textarea'){
-    inputbar.style.display='flex';
-    // replace single-line input with textarea visually but keep logic intact:
-    const ta = document.createElement('textarea'); ta.placeholder=q.question; ta.rows=4; ta.style.width='100%';
-    const send = document.createElement('button'); send.className='send'; send.textContent='Hantar';
-    send.onclick = ()=>{ const val = ta.value.trim(); if(!val) return alert('Sila isi jawapan'); appendBubble(val,'user'); responses[q.id]=val; ta.remove(); send.remove(); idx++; nextQuestion(); };
-    inputbar.after(ta); ta.after(send);
+    inputbar.style.display='none';
+    const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
+    const ta = document.createElement('textarea'); ta.placeholder = q.question; ta.rows = 4; ta.style.width='100%';
+    const btn = document.createElement('button'); btn.className='send'; btn.textContent='Hantar';
+    btn.onclick = ()=>{
+      const val = ta.value.trim(); if(!val) return alert('Sila isi jawapan');
+      appendBubble(val,'user');
+      responses[q.id] = val;
+      // cleanup interactive elements before moving on
+      clearInteractiveElements();
+      idx++;
+      nextQuestion();
+    };
+    wrapper.appendChild(ta); wrapper.appendChild(btn);
+    inputbar.after(wrapper);
     return;
   }
 
-  // choice / dropdown
+  // CHOICE / DROPDOWN
   if(q.type==='choice' || q.type==='dropdown'){
     inputbar.style.display='none';
+    const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
     const grid = document.createElement('div'); grid.className='choice-grid';
     (q.options||[]).forEach(opt=>{
-      const b = document.createElement('button'); b.className='choice'; b.textContent=opt;
-      b.onclick = () => { b.classList.add('active'); appendBubble(opt,'user'); responses[q.id]=opt; idx++; grid.remove(); nextQuestion(); };
+      const b=document.createElement('button'); b.className='choice'; b.textContent=opt;
+      b.onclick = ()=>{
+        appendBubble(opt,'user');
+        responses[q.id] = opt;
+        // cleanup all interactive elements then advance
+        clearInteractiveElements();
+        idx++;
+        nextQuestion();
+      };
       grid.appendChild(b);
     });
-    inputbar.after(grid); return;
+    wrapper.appendChild(grid);
+    inputbar.after(wrapper);
+    return;
   }
 
-  // checkbox
+  // CHECKBOX
   if(q.type==='checkbox'){
     inputbar.style.display='none';
+    const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
     const grid = document.createElement('div'); grid.className='choice-grid';
-    const selected=[];
+    const selected = [];
     (q.options||[]).forEach(opt=>{
       const b = document.createElement('button'); b.className='choice'; b.textContent=opt;
-      b.onclick = () => {
+      b.onclick = ()=>{
         if(selected.includes(opt)){ selected.splice(selected.indexOf(opt),1); b.classList.remove('active'); }
-        else{ selected.push(opt); b.classList.add('active'); }
+        else { selected.push(opt); b.classList.add('active'); }
       };
       grid.appendChild(b);
     });
     const submitBtn = document.createElement('button'); submitBtn.className='send'; submitBtn.textContent='Hantar';
-    submitBtn.onclick = () => {
+    submitBtn.onclick = ()=>{
       if(selected.length===0) return alert('Sila pilih sekurang-kurangnya satu!');
-      appendBubble(selected.join(', '),'user'); responses[q.id]=selected; idx++; grid.remove(); submitBtn.remove(); nextQuestion();
+      appendBubble(selected.join(', '),'user');
+      responses[q.id] = selected.slice();
+      clearInteractiveElements();
+      idx++;
+      nextQuestion();
     };
-    grid.appendChild(submitBtn);
-    inputbar.after(grid);
+    wrapper.appendChild(grid); wrapper.appendChild(submitBtn);
+    inputbar.after(wrapper);
     return;
   }
 
-  // linear_scale
-  if(q.type==='linear_scale'){
+  // LINEAR SCALE
+  if(q.type==='linear_scale' || q.type==='rating'){
     inputbar.style.display='none';
+    const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
     const grid = document.createElement('div'); grid.className='choice-grid rating-wrap';
     const max = q.max || 5;
     for(let i=1;i<=max;i++){
       const b = document.createElement('button'); b.className='choice'; b.textContent = i;
-      b.onclick = () => { appendBubble(String(i),'user'); responses[q.id]=i; idx++; grid.remove(); nextQuestion(); };
+      b.onclick = ()=>{
+        appendBubble(String(i),'user');
+        responses[q.id] = i;
+        clearInteractiveElements();
+        idx++;
+        nextQuestion();
+      };
       grid.appendChild(b);
     }
-    inputbar.after(grid); return;
+    wrapper.appendChild(grid);
+    inputbar.after(wrapper);
+    return;
   }
 
-  // multiple_choice_grid & checkbox_grid (render simple button grid, polish is CSS-only)
+  // MULTIPLE CHOICE GRID / CHECKBOX GRID
   if(q.type==='multiple_choice_grid' || q.type==='checkbox_grid'){
     inputbar.style.display='none';
-    const grid = document.createElement('div'); grid.className='mc-grid';
-    // naive handling: treat options as rows if they contain ':' (for checkbox_grid example)
+    const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper mc-grid';
     if(q.type==='checkbox_grid'){
-      // For the CSV format provided, options string may contain "Pagi: Nasi lemak;Roti;...,Tengahari:...,Malam:..."
-      // We'll split by sections on 'Tengahari' keywords or by presence of ':' to create rows.
-      const raw = q.options || [];
-      // If options provided as single array item, try parse by commas/semicolons and colons
-      const joined = Array.isArray(raw) ? raw.join(';') : raw;
-      const parts = joined.split(/(?:\s*;\s*)/).filter(Boolean);
-      // Group by sections containing colon
+      // parse expected CSV format with sections e.g. "Pagi: Nasi lemak;Roti;...,Tengahari:..."
+      const joined = (Array.isArray(q.options) ? q.options.join(';') : (q.options||'')).toString();
+      const parts = joined.split(/\s*;\s*/).filter(Boolean);
       const groups = {};
       parts.forEach(p=>{
         if(p.includes(':')){
-          const [k,v] = p.split(':'); groups[k.trim()] = (v||'').split(',').map(s=>s.trim()).filter(Boolean);
+          const [k,rest] = p.split(':'); 
+          const items = (rest||'').split(',').map(s=>s.trim()).filter(Boolean);
+          groups[k.trim()] = (groups[k.trim()]||[]).concat(items);
         } else {
-          // fallback append to "Other"
+          // fallback
           groups['Pilihan'] = groups['Pilihan'] || []; groups['Pilihan'].push(p.trim());
         }
       });
-      // render each group as row
       Object.keys(groups).forEach(k=>{
+        const label = document.createElement('div'); label.className='helper'; label.textContent = k;
         const rowWrap = document.createElement('div'); rowWrap.className='mc-row';
         groups[k].forEach(opt=>{
           const btn = document.createElement('button'); btn.className='choice'; btn.textContent = opt;
-          btn.onclick = () => {
-  appendBubble(`${k}: ${opt}`,'user'); 
-  responses[q.id]=responses[q.id]||[]; 
-  responses[q.id].push(`${k}: ${opt}`); 
-  idx++; 
-  // remove entire grid after selection
-  grid.remove();
-  nextQuestion();
-};
+          btn.onclick = ()=>{
+            appendBubble(`${k}: ${opt}`,'user');
+            responses[q.id] = responses[q.id] || []; responses[q.id].push(`${k}: ${opt}`);
+            // remove entire wrapper (not only row) and continue
+            clearInteractiveElements();
+            idx++;
+            nextQuestion();
+          };
           rowWrap.appendChild(btn);
         });
-        const label = document.createElement('div'); label.className='helper'; label.textContent = k;
-        grid.appendChild(label); grid.appendChild(rowWrap);
+        wrapper.appendChild(label); wrapper.appendChild(rowWrap);
       });
     } else {
-      // for multiple_choice_grid, options is simple semicolon list -> render each as button
+      // multiple_choice_grid (simpler: treat each option as a row)
       (q.options||[]).forEach(opt=>{
         const row = document.createElement('div'); row.className='mc-row';
         const btn = document.createElement('button'); btn.className='choice'; btn.textContent = opt;
-        btn.onclick = ()=>{ appendBubble(opt,'user'); responses[q.id]=opt; idx++; grid.remove(); nextQuestion(); };
+        btn.onclick = ()=>{
+          appendBubble(opt,'user');
+          responses[q.id] = opt;
+          clearInteractiveElements();
+          idx++;
+          nextQuestion();
+        };
         row.appendChild(btn);
-        grid.appendChild(row);
+        wrapper.appendChild(row);
       });
     }
-    inputbar.after(grid);
+    inputbar.after(wrapper);
     return;
   }
 
-  // file
+  // FILE
   if(q.type==='file'){
     inputbar.style.display='none';
-    const helper = document.createElement('div'); helper.className='helper'; helper.textContent='Klik "Pilih Fail" untuk buka picker (Gallery/Files).';
+    const wrapper = document.createElement('div'); wrapper.className='interactive-wrapper';
+    const help = document.createElement('div'); help.className='helper'; help.textContent='Klik "Pilih Fail" untuk buka picker (Gallery/Files).';
     const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='*/*';
     const submitBtn = document.createElement('button'); submitBtn.className='send'; submitBtn.textContent='Hantar';
-    submitBtn.onclick = () => {
-      const f = fileInput.files[0]; if(!f) return alert('Sila pilih fail'); appendBubble(f.name,'user'); responses[q.id]=f.name; renderMedia(URL.createObjectURL(f), f.name); fileInput.remove(); submitBtn.remove(); helper.remove(); idx++; nextQuestion();
+    submitBtn.onclick = ()=>{
+      const f = fileInput.files[0]; if(!f) return alert('Sila pilih fail');
+      appendBubble(f.name,'user');
+      responses[q.id] = f.name;
+      renderMedia(URL.createObjectURL(f), f.name);
+      clearInteractiveElements();
+      idx++;
+      nextQuestion();
     };
-    inputbar.after(helper); helper.after(fileInput); fileInput.after(submitBtn);
+    wrapper.appendChild(help); wrapper.appendChild(fileInput); wrapper.appendChild(submitBtn);
+    inputbar.after(wrapper);
     return;
   }
 
-  // media (preview only)
+  // MEDIA (preview only)
   if(q.type==='media'){
     inputbar.style.display='none';
-    if(q.url){ renderMedia(q.url,q.question); setTimeout(()=>{ idx++; nextQuestion(); },1000); }
+    if(q.url){ renderMedia(q.url, q.question); setTimeout(()=>{ idx++; nextQuestion(); }, 1000); }
     return;
   }
 
-  // date / time (native picker)
+  // DATE / TIME
   if(q.type==='date' || q.type==='time'){
     inputbar.style.display='flex';
     input.type = q.type;
     input.placeholder = q.question;
-    // keep normal sendBtn handler (no change)
     return;
   }
 
-  // fallback: simple text
+  // fallback text input
   input.type = 'text';
   input.placeholder = q.question;
 }
 
-// progress to next question
+/* === nextQuestion & send logic (sendBtn updated to cleanup interactive elements) === */
 function nextQuestion(){
-  if(idx>=questions.length){
+  if(idx >= questions.length){
     appendBubble('Terima kasih! Semua soalan dijawab.','bot');
     console.log('responses', responses);
-    inputbar.style.display='none';
+    // ensure no leftover interactive elements
+    clearInteractiveElements();
     return;
   }
   const q = questions[idx];
   appendBubble(q.question,'bot');
-  // small delay to feel chatty
-  setTimeout(()=>renderInput(q), 260);
+  // small delay to mimic typing
+  setTimeout(()=>renderInput(q), 240);
 }
 
-// send button handler remains unchanged behaviour
 sendBtn.onclick = ()=>{
+  // handle date/time/text send via the global input
   if(!currentAnswer) currentAnswer = input.value.trim();
   if(!currentAnswer) return alert('Sila isi jawapan!');
-  appendBubble(currentAnswer,'user'); responses[questions[idx].id] = currentAnswer;
-  currentAnswer = null; input.value=''; idx++; nextQuestion();
+  appendBubble(currentAnswer,'user');
+  responses[questions[idx].id] = currentAnswer;
+  // cleanup interactive elements (this hides inputbar too)
+  clearInteractiveElements();
+  currentAnswer = null; input.value = '';
+  idx++;
+  nextQuestion();
 };
 
-// Fetch CSV — robust parsing (keperluan asal preserved)
+/* === robust CSV fetch & parse (keperluan asal dikekalkan) === */
 fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
-  // tolerant parse: split lines, ignore empty
   const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   if(!lines.length) throw new Error('CSV kosong atau tak dapat diakses');
   const header = lines[0].split(',').map(h=>h.trim().toLowerCase());
   const rows = lines.slice(1).map(l=>{
-    // split on commas but keep commas inside quotes (rudimentary)
-    // simpler: use a CSV-safe split when quotes present
     if(l.indexOf('"') !== -1){
-      // quick csv parse for the line
-      const vals = [];
-      let cur = '', inQuotes=false;
+      const vals=[]; let cur='', inQuotes=false;
       for(let i=0;i<l.length;i++){
-        const ch = l[i];
-        const nxt = l[i+1];
-        if(ch === '"'){ if(inQuotes && nxt === '"'){ cur += '"'; i++; continue;} inQuotes = !inQuotes; continue; }
+        const ch = l[i], nxt = l[i+1];
+        if(ch === '"'){ if(inQuotes && nxt === '"'){ cur+='"'; i++; continue; } inQuotes = !inQuotes; continue; }
         if(ch === ',' && !inQuotes){ vals.push(cur); cur=''; continue; }
         cur += ch;
       }
-      vals.push(cur);
-      return vals;
+      vals.push(cur); return vals;
     }
     return l.split(',').map(c=>c.trim());
   });
@@ -370,7 +371,6 @@ fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
     obj.question = (r[iQ]||'').toString().trim() || ('Soalan '+obj.id);
     if(r[iClosing]) obj.closing = (r[iClosing]||'').toString().trim();
     if(['choice','dropdown','checkbox','multiple_choice_grid','checkbox_grid'].includes(obj.type) && r[iOpt]){
-      // options normally semicolon-separated in your sheet
       obj.options = (r[iOpt]||'').toString().split(';').map(s=>s.trim()).filter(Boolean);
     }
     if(obj.type==='linear_scale' || obj.type==='rating'){
@@ -380,7 +380,7 @@ fetch(SHEET_CSV_URL).then(r=>r.text()).then(txt=>{
     return obj;
   });
 
-  // start
+  // start conversation
   nextQuestion();
 }).catch(e=>{
   appendBubble('❌ Gagal muatkan soalan: '+(e.message||e),'bot');
